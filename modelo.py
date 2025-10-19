@@ -17,8 +17,14 @@ base_diretorio = "audio_base"
 def extrair_mfcc(caminho_arquivo):
 
     y, sr = librosa.load(caminho_arquivo, sr=None)
-    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
     return np.mean(mfcc.T, axis=0)
+
+
+def aumentando_arquivos(y, sr):
+    y_pitch = librosa.effects.pitch_shift(y, sr=sr, n_steps=2)
+    y_stretch = librosa.effects.time_stretch(y, rate=1.1)
+    return [y, y_pitch, y_stretch]
 
 
 arquivos = glob.glob(os.path.join(base_diretorio, "*/*.wav"))
@@ -26,8 +32,13 @@ dados = []
 rotulos = []
 
 for nome_arquivo in arquivos:
-    dados.append(extrair_mfcc(nome_arquivo))
-    rotulos.append(os.path.basename(os.path.dirname(nome_arquivo)))
+
+    y, sr = librosa.load(nome_arquivo, sr=None)
+    audio_aumentado = aumentando_arquivos(y, sr)
+    for y_aumentado in audio_aumentado:
+        mfcc = np.mean(librosa.feature.mfcc(y=y_aumentado, sr=sr, n_mfcc=13).T, axis=0)
+        dados.append(mfcc)
+        rotulos.append(os.path.basename(os.path.dirname(nome_arquivo)))
 
 
 X = np.array(dados)
@@ -48,12 +59,21 @@ X_train, X_test, Y_train, Y_test = train_test_split(
 print(f'Amostras de treino:{len(X_train)}')
 print(f'Amostras de teste:{len(X_test)}')
 
-model = keras.Sequential([
-    layers.Dense(12, input_dim=40, activation='relu'),
-    layers.Dense(1, activation='sigmoid')
-])
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
+num_classes = len(np.unique(Y_encoded))
+
+
+model = keras.Sequential([
+    layers.Dense(32, activation='relu', input_dim=13),
+    layers.Dropout(0.3),
+    layers.Dense(16, activation='relu'),
+    layers.Dropout(0.3), 
+    layers.Dense(num_classes, activation='softmax')
+])
+
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
 
 #Treinando o modelo:
 
