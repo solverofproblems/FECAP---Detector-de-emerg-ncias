@@ -21,24 +21,15 @@ def extrair_mfcc(caminho_arquivo):
     return np.mean(mfcc.T, axis=0)
 
 
-def aumentando_arquivos(y, sr):
-    y_pitch = librosa.effects.pitch_shift(y, sr=sr, n_steps=2)
-    y_stretch = librosa.effects.time_stretch(y, rate=1.1)
-    return [y, y_pitch, y_stretch]
-
 
 arquivos = glob.glob(os.path.join(base_diretorio, "*/*.wav"))
 dados = []
 rotulos = []
 
 for nome_arquivo in arquivos:
-
-    y, sr = librosa.load(nome_arquivo, sr=None)
-    audio_aumentado = aumentando_arquivos(y, sr)
-    for y_aumentado in audio_aumentado:
-        mfcc = np.mean(librosa.feature.mfcc(y=y_aumentado, sr=sr, n_mfcc=13).T, axis=0)
-        dados.append(mfcc)
-        rotulos.append(os.path.basename(os.path.dirname(nome_arquivo)))
+    mfcc = extrair_mfcc(nome_arquivo)
+    dados.append(mfcc)
+    rotulos.append(os.path.basename(os.path.dirname(nome_arquivo)))
 
 
 X = np.array(dados)
