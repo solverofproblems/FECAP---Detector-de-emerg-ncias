@@ -10,6 +10,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import classification_report
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 import matplotlib.pyplot as plt
+import joblib
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -308,5 +309,10 @@ def main():
     # Treinar modelo
     model, X_test, y_test, y_pred = classifier.treinar_modelo(X, y)
     
+    model.save('modelo_finalizado.h5')
+    joblib.dump(classifier.scaler, 'scaler.pkl')
+    print('Modelo salvo com sucesso!')
+    print('Scaler salvo em scaler.pkl')
+
 if __name__ == "__main__":
     main()
